@@ -6,4 +6,6 @@ Run the following commands to set up your local ES6 env:
     gulp build --dev
     gulp server
 
-The server is now listening at port 8000, and your modifications will be detected, change some code then you can see view changes.
+Now the server is listening at port 8000, and your modifications will be detected automatically.
+
+Try to change some code, and enjoy your ES6 learning.
