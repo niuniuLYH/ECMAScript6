@@ -1,0 +1,832 @@
+1.let和const命令
+	*let命令：
+		1）、不存在变量提升。使用var存在变量提升的问题，即变量可以在申明之前被使用，值为undefined。但是用let定义变量时，声明的变量一定要在声明之后使用，否则会报错
+		2）、暂时性死区。在使用let申明变量之前使用该变量就会报错。另外只要块级作用域内存在let命令，它所声明的变量就“绑定”（binding）这个区域，不受外部影响。
+		3）、let不运行在相同的作用域内重复申明同一个变量，否则会报错。因此，不能在函数内部重新申明参数。
+		4）、块级作用域。一对大括号括起来的区域就是一个块级作用域，外层的作用域无法访问内层作用域的变量。
+		5）、块级作用域与函数声明的规定：
+			a.允许在块级作用域中申明函数。
+			b.函数的申明类似于var,即会提升到全局作用域或函数作用域的头部
+			c.同时，函数申明会提升到所在的块级作用域的头部。
+			因此，应该尽量避免在作用域中申明函数，如果必须要，则应该写成函数表达式，而不是函数声明语句。例如：用let a = function(){}代替function a(){}来申明函数
+			ps：es6的块级作用域允许申明函数的规则，只在使用大括号的情况下成立，如果没有大括号，则会报错。（直接在转码的过程中就报语法错误）
+		6）、do表达式。本质上块级作用域其实就是一个语句，将多个操作封装在一起，没有返回值，因此在块级作用域之外的地方无法访问作用域里面的局部变量。
+			解决方法，使用do表达式，例如:	let x = do{let t = f();t * t + 1}，这里的x会得到整个块级作用域的返回值
+	*const命令。
+		1）、即申明常量，申明之后不得再被修改，否则报错，这意味着在申明的时候就必须给变量赋一个初始值，否则也会报错。并且其只在申明所在的块级作用域中有效。
+		2）、存在暂时性死区
+		3）、本质：const实际上保证的不是变量的值不能变动，而是变量所指向的那个内存地址不得改动。对于简单的数据类型（数值，字符串，布尔值），值就保存在变量指向的那个内存地址，因此等同于常量
+			但是对于复杂类型（对象和数组），变量指向内存地址，保存的是一个指针，const保证这个指针是固定的，至于其中的数据结构是不是可变的，就不受控制了。
+	*es6的声明变量的方法
+		不仅有var,function,let,const,还有import和class
+		1）、顶层对象的属性
+			var和function申明的全局变量依旧是顶层对象（window或者global）的属性，let，const和class申明的全局变量将不属于顶层对象的属性。也就是说全局变量将逐渐和顶层对象的属性脱钩
+	*es6中取到顶层对象的问题
+		1）、浏览器里面，顶层对象是window，但 Node 和 Web Worker 没有window。
+		2）、浏览器和 Web Worker 里面，self也指向顶层对象，但是Node没有self。
+		3）、Node 里面，顶层对象是global，但其他环境都不支持。
+		解决方法：
+		// 方法一
+		(typeof window !== 'undefined'
+		   ? window
+		   : (typeof process === 'object' &&
+			  typeof require === 'function' &&
+			  typeof global === 'object')
+			 ? global
+			 : this);
+
+2、变量的解构赋值
+	*数组的解构赋值。
+		1）、用法。let ['a','b','c'] = [1,2,3];//从数组中提取值，按照对应位置，对变量赋值。
+					let ['a','b'] = [1,2,3];//不完全解构，即等号左边的模式，只匹配一部分的等号右边的数组。这种情况下，解构依然可以成功。
+		2）、默认值。解构赋值允许指定默认值。
+			let [x, y = 'b'] = ['a']; // x='a', y='b'
+			注意，ES6 内部使用严格相等运算符（===），判断一个位置是否有值。所以，如果一个数组成员不严格等于undefined，默认值是不会生效的。例如：let [x = 1] = [null];x // null
+			如果默认值是一个表达式，那么这个表达式是惰性求值的，即只有在用到的时候，才会求值。例如：
+			function f() {
+				console.log('aaa');
+			}
+			let [x = f()] = [1];//在这里因为x能取到值1，所以函数f永远都不会被执行
+	*对象的解构赋值
+		1）、let { foo, bar } = { foo: "aaa", bar: "bbb" };foo // "aaa"  bar // "bbb"。变量必须与属性同名，才能取到正确的值。
+		2）、如果变量名与属性名不一致，必须写成这样。
+			var { foo: baz } = { foo: 'aaa', bar: 'bbb' };baz // "aaa" //foo是匹配的模式，baz才是变量。真正被赋值的是变量baz，而不是模式foo。
+		3）、如果变量先什么后赋值时，后赋值时不能加let命令，并且赋值语句需要用（）括起来
+			例如：let foo;
+				  ({foo} = {foo: 1}); // 成功,圆括号避免解析器将大括号解析成一个代码块
+				  let baz;
+				  ({bar: baz} = {bar: 1}); // 成功
+		4）、默认值：默认值生效的条件是对象的属性值严格等undefined
+			例如：var {x = 3} = {x: undefined};x//3
+				  var {x = 3} = {x:null};x//null.因为null不是严格的undefined，所以其值是null。
+	*字符串的解构赋值
+		1）、字符串也可以解构赋值。这是因为此时，字符串被转换成了一个类似数组的对象。
+			const [a, b, c, d, e] = 'hello';
+			类似数组的对象都有一个length属性，因此还可以对这个属性解构赋值。
+			let {length : len} = 'hello';
+			len // 5
+	*数值和布尔值的解构赋值
+		1）、解构赋值时，如果等号右边是数值和布尔值，则会先转为对象。
+			let {toString: s} = 123;
+			s === Number.prototype.toString // true
+			let {toString: s} = true;
+			s === Boolean.prototype.toString // true
+			数值和布尔值的包装对象都有toString属性，因此变量s都能取到值。
+			
+		2）、解构赋值的规则是，只要等号右边的值不是对象或数组，就先将其转为对象。由于undefined和null无法转为对象，所以对它们进行解构赋值，都会报错。
+			例如：let { prop: x } = undefined; // TypeError
+			      let { prop: y } = null; // TypeError
+	*函数参数的解构赋值
+		1）、函数的参数也可使用解构赋值
+		例如：function add([x, y]){
+				  return x + y;
+				}
+				add([1, 2]); // 3
+		2）、函数的参数也可使用默认值
+			function move({x = 0, y = 0} = {}) {//函数move的参数是一个对象，通过对这个对象进行解构，得到变量x和y的值。如果解构失败，x和y等于默认值。
+				return [x, y];
+			}
+			move({x: 3, y: 8}); // [3, 8]
+			move({x: 3}); // [3, 0]
+			move({}); // [0, 0]
+			move(); // [0, 0]
+			
+			function move({x, y} = { x: 0, y: 0 }) {//为函数move的参数指定默认值，而不是为变量x和y指定默认值，所以会得到与前一种写法不同的结果。
+			  return [x, y];
+			}
+			move({x: 3, y: 8}); // [3, 8]
+			move({x: 3}); // [3, undefined]
+			move({}); // [undefined, undefined]
+			move(); // [0, 0]		
+	*不能使用圆括号的情况
+		1）、变量申明语句中不能使用圆括号
+			let [(a)] = [1];let {x: (c)} = {};//都会报错，因为他们都是变量申明语句，模式不能使用圆括号
+		2）、函数参数的模式中不能使用圆括号
+			function f([(z)]) { return z; }//因为函数的参数其实也是变量的申明，所以不能使用圆括号
+		3）、赋值语句中，不能将整个模式，或嵌套模式中的一层，放在圆括号之中
+			({ p: a }) = { p: 42 }; //报错，因为将整个模式都放在了圆括号之内
+			[({ p: a }), { x: c }] = [{}, {}];//报错，将嵌套模式中的一层放在了圆括号中
+	*可以使用圆括号的情况
+		1）、赋值语句（而非申明！！）中的非模式部分，可以使用圆括号
+			[(b)] = [3]; // 正确
+			({ p: (d) } = {}); // 正确
+			[(parseInt.prop)] = [3]; // 正确
+	*变量结构赋值的用途
+		1）、交换变量的值：let x = 1;y = 2; [x,y] = [y,x];
+		2）、从函数返回多个值：
+			function exmple(){
+				return [1,2,3];//返回数组
+			}
+			let [a,b,c] = exmple();
+			function exmple(){//返回一个对象
+				return {
+					for:1,
+					bar:2
+				}
+			}
+			let{for,bar} = exmple()
+		3）、函数参数的定义
+			function test([x,y,z]){}
+			test([1,2,3])//传递一个数组
+			function test2({x,y,z}){}
+			test2({x:1,y:2,z:3});//传递一个无序的对象
+		4）、提取json数据
+			let json = {
+				name:'haha',
+				age:24,
+				data:[12,23]
+			}
+			let {name,age,data:number} = json;
+			console.log(name,age,number);//'haha',24,[12,23]
+		5）、设置函数参数的默认值
+		6）、遍历map结构
+			var map = new Map();
+			map.set('first', 'hello');
+			map.set('second', 'world');
+			for (let [key, value] of map) {
+			  console.log(key + " is " + value);
+			}
+			// first is hello
+			// second is world
+		（7）输入模块的指定方法
+		
+3.字符串的扩展
+	1）、字符的Unicode表示法
+		'\z' === 'z';
+		'\172' === 'z';
+		'\x7A' === 'z';
+		'\u007A' === 'z';
+		'\u{7A}' === 'z';
+	2）、codePointAt()方法。
+	 .对于有四个字节的字符，JavaScript不能正确处理，ES6提供了codePointAt方法，能够正确处理4个字节储存的字符，返回一个字符的码点。
+	 .codePointAt方法会正确返回32位的UTF-16字符的码点。对于那些两个字节储存的常规字符，它的返回结果与charCodeAt方法相同。
+	 .codePointAt方法返回的是码点的十进制值，如果想要十六进制的值，可以使用toString方法转换一下
+		var s = '??a';
+		s.codePointAt(0).toString(16) // "20bb7"
+		s.codePointAt(2).toString(16) // "61"
+	 .codePointAt方法是测试一个字符由两个字节还是由四个字节组成的最简单方法
+		function is32Bit(c) {
+		  return c.codePointAt(0) > 0xFFFF;
+		}
+		is32Bit("??") // true
+		is32Bit("a") // false
+	3）、String.fromCodePoint()
+		es5提供了formCharCode()方法，用于从点码返回字符，但是这个方法不能识别32位以上的字符（Unicode编号大于0xffff）
+		es6提供了formCodePoint()方法，可以识别大于0xFFFF的字符，弥补了String.fromCharCode方法的不足。在作用上，正好与codePointAt方法相反。
+		String.fromCodePoint(0x20BB7)
+		// "??"
+		String.fromCodePoint(0x78, 0x1f680, 0x79) === 'x\uD83D\uDE80y'
+		// true
+		【注意，fromCodePoint方法定义在String对象上，而codePointAt方法定义在字符串的实例对象上。】
+	4）、字符串的遍历器接口
+		for...of...循环
+		for (let codePoint of 'foo') {
+		  console.log(codePoint)
+		}
+		// "f"
+		// "o"
+		// "o"
+		【除了遍历字符串，这个遍历器最大的优点是可以识别大于0xFFFF的码点，传统的for循环无法识别这样的码点。】
+	5）、at()方法
+		es5提供了一个chartAt()方法，用于返回字符串对应位置的字符，但是该方法不能识别点码大于0xffff的字符，
+		所以es6提供了一个at()方法，可以识别Unicode编号大于0xffff的字符
+	6）、nomalize()方法
+		ES6提供字符串实例的normalize()方法，用来将字符的不同表示方法统一为同样的形式，这称为Unicode正规化。【'\u01D1'.normalize() === '\u004F\u030C'.normalize()】
+		normalize方法目前不能识别三个或三个以上字符的合成
+	7）、includes(),startsWithWith(),endsWith()
+		includes()：返回布尔值，表示是否找到了参数字符串。
+		startsWith()：返回布尔值，表示参数字符串是否在源字符串的头部。
+		endsWith()：返回布尔值，表示参数字符串是否在源字符串的尾部。
+		这三个方法都支持第二个参数，表示开始搜索的位置。
+		var s = 'Hello world!';
+		s.startsWith('world', 6) // true
+		s.endsWith('Hello', 5) // true
+		s.includes('Hello', 6) // false
+		【上面代码表示，使用第二个参数n时，endsWith的行为与其他两个方法有所不同。它针对前n个字符，而其他两个方法针对从第n个位置直到字符串结束。】
+	8）、repeat()方法	
+		返回一个新的字符串，表示将原字符串重复n次。【注意，参数是小数，依照floor取整；如果是负数或Infinity的话，会报错；如果是0到-1之间的数表示0；NAN等同于0;如果参数是字符串，则先转换成数字】
+		'na'.repeat('na') // ""
+		'na'.repeat(2.9) // "nana"
+		'na'.repeat('3') // "nanana"
+	9）、padStart(),padEnd()
+		两个都是补全字符串的功能，如果字符串不够指定的长度，会在头部或者尾部进行补全，padStart()从头部补全，padEnd()从尾部补全。
+		例如：'x'.padStart(5, 'ab') // 'ababx'
+		'x'.padStart(4, 'ab') // 'abax'【第一个参数是字符串的最小位数，第二个是补全字符串】
+		'x'.padEnd(5, 'ab') // 'xabab'
+		'x'.padEnd(4, 'ab') // 'xaba'
+		注意：【1.如果原字符串的长度等于或大于指定的最小长度，则返回原字符串；
+				2.如果用来补全的字符串和原字符串，两者的长度之和超出了最小长度，则截取超出位数的补全字符串；
+				3.如果省略第二个参数，默认使用空格进行补全；
+				4.常见用途：为数值补全指定位数，例如：'1'.padStart(10, '0') // "0000000001"或'12'.padStart(10, '0') // "0000000012"
+							提示字符串格式：'12'.padStart(10, 'YYYY-MM-DD') // "YYYY-MM-12"或'09-12'.padStart(10, 'YYYY-MM-DD') // "YYYY-09-12"】
+	10）、模板字符串
+		ES5中的输出模板通常如下
+			$('#result').append(
+			  'There are <b>' + basket.count + '</b> ' +
+			  'items in your basket, ' +
+			  '<em>' + basket.onSale +
+			  '</em> are on sale!'
+			);
+		es6引入了一个模板字符串
+			$('#result').append(`
+			  There are <b>${basket.count}</b> items
+			   in your basket, <em>${basket.onSale}</em>
+			  are on sale!
+			`);
+		【注意：1.模板字符串是增强版的字符串，用反引号来标志，它可以当做普通的字符串，也可以定义多行字符串，或者在字符串中嵌入变量
+				2.如果在模板字符串中需要使用反引号，则前面要用反斜杠转义。例如：var greeting = `\`Yo\` World!`;
+				3.如果使用模板字符串表示多行字符串，所有的空格和缩进都会被保留在输出之中。
+				4.模板字符串中嵌入变量，需要将变量名写在${}之中。大括号内部可以放入任意的JavaScript表达式，可以进行运算，以及引用对象属性。
+				5.模板字符串中还可以引用函数：`foo ${fn()} bar`
+				6.如果大括号中的值不是字符串，将按照一般的规则转为字符串。比如，大括号中是一个对象，将默认调用对象的toString方法。】
+	11）、模板编译
+		var template = `
+		<ul>
+		  <% for(var i=0; i < data.supplies.length; i++) { %>
+			<li><%= data.supplies[i] %></li>
+		  <% } %>
+		</ul>
+		`;
+		上面代码在模板字符串之中，放置了一个常规模板。该模板使用<%...%>放置JavaScript代码，使用<%= ... %>输出JavaScript表达式。
+	12）、标签模板
+		a.模板字符串可以紧跟在一个函数名后面，该函数将被调用来处理这个模板字符串。这被称为“标签模板”功能（tagged template）。
+		b.标签模板其实不是模板，而是函数调用的一种特殊形式。“标签”指的就是函数，紧跟在后面的模板字符串就是它的参数。
+		【标签模板的使用场合：
+			1.过滤html字符串，防止用户输入恶意的内容；
+			2.多语言转换。
+			3.模板处理函数的第一个参数（模板字符串数组），还有一个raw属性，保存的是转义后的原字符串。】
+	13）、String.raw()方法
+		String.raw方法，往往用来充当模板字符串的处理函数，返回一个斜杠都被转义（即斜杠前面再加一个斜杠）的字符串，对应于替换变量后的模板字符串，
+		如果原字符串的斜杠已经转义，那么String.raw不会做任何处理。
+		例如：	String.raw`Hi\n${2+3}!`;
+			// "Hi\\n5!"
+
+			String.raw`Hi\u000A!`;
+			// 'Hi\\u000A!'
+		String.raw方法可以作为处理模板字符串的基本方法，它会将所有变量替换，而且对斜杠进行转义，方便下一步作为字符串来使用。
+		
+5.正则的扩展
+	1）、RegExp()构造函数
+		a.es5构造函数的第一种情况，参数是字符串。var regex = new RegExp('xyz', 'i');
+		b.es5构造函数的参数第二种情况，参数是一个正则表达，这时，不允许使用第二个参数，添加任何修饰符，否则会报错
+		c.es6对其进行了修改，如果第一个参数是正则对象，那么可以第二个参数制定修饰符，返回的正则表达会忽略原有的正则表达的修饰符，只是用新制定的修饰符
+		【例如：new RegExp(/abc/ig, 'i').flags  // "i"，在这里，原有正则对象的修饰符ig就会被第二个i给覆盖】
+	2）、字符串的正则方法
+		字符串对象共有4个方法，match(),replace(),search()和split()方法，es6将这4个方法，在语言内部全部调用RegExp的实例方法，从而做到所有与正则相关的方法，全部定义在RegExp对象上
+		*String.prototype.match 调用 RegExp.prototype[Symbol.match]
+		*String.prototype.replace 调用 RegExp.prototype[Symbol.replace]
+		*String.prototype.search 调用 RegExp.prototype[Symbol.search]
+		*String.prototype.split 调用 RegExp.prototype[Symbol.split]
+	3）、U修饰符
+		es6增加的u修饰符，意为unicode，用来正确处理大于\uffff的Unicode字符
+		例如：/^\uD83D/u.test('\uD83D\uDC2A')
+			// false
+			/^\uD83D/.test('\uD83D\uDC2A')
+			// true
+		上面代码中，\uD83D\uDC2A是一个四个字节的UTF-16编码，代表一个字符。但是，ES5不支持四个字节的UTF-16编码，会将其识别为两个字符，导致第二行代码结果为true。
+		加了u修饰符以后，ES6就会识别其为一个字符，所以第一行代码结果为false。
+		a.点字符。
+		正则表达式中的点表示除了换行以外的单个字符，而对于点码大于0xffff的字符，点字符不能识别，要加上u修饰符
+			例如：var s = '??';
+				/^.$/.test(s) // false
+				/^.$/u.test(s) // true
+		b.ES6新增了使用大括号表示Unicode字符，这种表示法在正则表达式中必须加上u修饰符，才能识别。
+			例如：/\u{61}/.test('a') // false
+				/\u{61}/u.test('a') // true
+				/\u{20BB7}/u.test('??') // true
+		c.使用u修饰符后，所有量词都会正确识别码点大于0xFFFF的Unicode字符。
+			例如：/a{2}/.test('aa') // true
+				/a{2}/u.test('aa') // true
+				/??{2}/.test('????') // false
+				/??{2}/u.test('????') // true
+		  【另外，只有在使用u修饰符的情况下，Unicode表达式当中的大括号才会被正确解读，否则会被解读为量词。例如：/^\u{3}$/.test('uuu') // true】
+		d.预定义模式
+			\S是预定义模式，匹配所有不是空格的字符。只有加了u修饰符，它才能正确匹配码点大于0xFFFF的Unicode字符。
+			例如：/^\S$/.test('??') // false
+				  /^\S$/u.test('??') // true
+		e.i修饰符
+		有些Unicode字符的编码不同，但是字型很相近，比如，\u004B与\u212A都是大写的K。
+			/[a-z]/i.test('\u212A') // false
+			/[a-z]/iu.test('\u212A') // true
+			上面代码中，不加u修饰符，就无法识别非规范的K字符。
+	4）、y修饰符
+		a.y修饰符的作用与g修饰符类似，也是全局匹配，后一次匹配都从上一次匹配成功的下一个位置开始。
+			不同之处在于，g修饰符只要剩余位置中存在匹配就可，而y修饰符确保匹配必须从剩余的第一个位置开始，这也就是“粘连”的涵义。
+		b.lastIndex属性指定每次搜索的开始位置，g修饰符从这个位置开始向后搜索，直到发现匹配为止。
+		  y修饰符同样遵守lastIndex属性，但是要求必须在lastIndex指定的位置发现匹配。
+		c.进一步说，y修饰符号隐含了头部匹配的标志^。y修饰符的设计本意，就是让头部匹配的标志^在全局匹配中都有效。
+		c.在split方法中使用y修饰符，原字符串必须以分隔符开头。这也意味着，只要匹配成功，数组的第一个成员肯定是空字符串。
+			例如：// 没有找到匹配
+					'x##'.split(/#/y)
+					// [ 'x##' ]
+
+					// 找到两个匹配
+					'##x'.split(/#/y)
+					// [ '', '', 'x' ]
+		d.y修饰符的一个应用，是从字符串提取token（词元），y修饰符确保了匹配之间不会有漏掉的字符。
+	5）、sticky属性：与y修饰符相匹配，ES6的正则对象多了sticky属性，表示是否设置了y修饰符。
+	6）、flags属性：es6新增了一个flags属性，用于返回正则表达式的修饰符
+	7）、s修饰符，dotAll模式
+		正则表达式中，点（.）是一个特殊字符，代表任意的单个字符，但是行终止符（line terminator character）除外。
+		以下四个字符属于”行终止符“。
+			U+000A 换行符（\n）
+			U+000D 回车符（\r）
+			U+2028 行分隔符（line separator）
+			U+2029 段分隔符（paragraph separator）
+		es6引入/s修饰符，使得.可以匹配任意单个字符。这被称为dotAll模式，即点（dot）代表一切字符。
+		例如：/foo.bar/s.test('foo\nbar') // true【在es5中.并不匹配换行符】
+		因此就有了dotAll属性，用来返回一个布尔值，表示该正则表达是否处于dotAll模式
+
+6.数组的扩展
+	1）、Array.from()
+	Array.from方法用于将两类对象转为真正的数组：类似数组的对象（array-like object）和可遍历（iterable）的对象（包括ES6新增的数据结构Set和Map）。
+	例如：
+		let arrayLike = {
+			'0': 'a',
+			'1': 'b',
+			'2': 'c',
+			length: 3
+		};
+		// ES5的写法
+		var arr1 = [].slice.call(arrayLike); // ['a', 'b', 'c']
+		// ES6的写法
+		let arr2 = Array.from(arrayLike); // ['a', 'b', 'c']
+	实际应用中，常见的类似数组的对象是DOM操作返回的NodeList集合，以及函数内部的arguments对象。Array.from都可以将它们转为真正的数组
+	如果参数是一个真正的数组，Array.from会返回一个一模一样的新数组。
+	值得提醒的是，扩展运算符（...）也可以将某些数据结构转为数组。
+	例如：	
+		// arguments对象
+		function foo() {
+		  var args = [...arguments];
+		}
+	Array.from方法还支持类似数组的对象。所谓类似数组的对象，本质特征只有一点，即必须有length属性。因此，任何有length属性的对象，都可以通过Array.from方法转为数组，
+	而此时扩展运算符就无法转换。
+	例如：
+		Array.from({ length: 3 });
+	// [ undefined, undefined, undefined ]
+	Array.from还可以接受第二个参数，作用类似于数组的map方法，用来对每个元素进行处理，将处理后的值放入返回的数组。
+	例如：
+		Array.from([1, 2, 3], (x) => x * x)   // [1, 4, 9]
+		等同于：Array.form([1,2,3]).map(x => x * x)
+		Array.from([1, , 2, , 3], (n) => n || 0)  // [1, 0, 2, 0, 3] 【将数组中布尔值为false的成员转为0】
+		Array.from({ length: 2 }, () => 'jack')  // ['jack', 'jack']【Array.from的第一个参数指定了第二个参数运行的次数。】
+	Array.from()的另一个应用是，将字符串转为数组，然后返回字符串的长度。因为它能正确处理各种Unicode字符，可以避免JavaScript将大于\uFFFF的Unicode字符，
+	算作两个字符的bug。
+	2）、Array.of()：用于将一组值转换成数组
+	Array方法没有参数、一个参数、三个参数时，返回结果都不一样。只有当参数个数不少于2个时，Array()才会返回由参数组成的新数组。参数个数只有一个时，
+	实际上是指定数组的长度。
+	例如：
+		Array() // []
+		Array(3) // [, , ,]
+		Array(3, 11, 8) // [3, 11, 8]
+	Array.of基本上可以用来替代Array()或new Array()，并且不存在由于参数不同而导致的重载。它的行为非常统一。
+	Array.of总是返回参数值组成的数组。如果没有参数，就返回一个空数组。
+	例如：
+		Array.of() // []
+		Array.of(undefined) // [undefined]
+		Array.of(1) // [1]
+		Array.of(1, 2) // [1, 2]
+	3）、数组实例的copyWithin()
+		数组实例的copyWithin方法，在当前数组内部，将指定位置的成员复制到其他位置（会覆盖原有成员），然后返回当前数组。也就是说，使用这个方法，会修改当前数组。
+		它接受三个参数。
+			target（必需）：从该位置开始替换数据。
+			start（可选）：从该位置开始读取数据，默认为0。如果为负值，表示倒数。
+			end（可选）：到该位置前停止读取数据，默认等于数组长度。如果为负值，表示倒数。
+		这三个参数都应该是数值，如果不是，会自动转为数值。
+		[1, 2, 3, 4, 5].copyWithin(0, 3)  // [4, 5, 3, 4, 5]
+	4）、数组实例的find()和findIndex()
+		数组实例的find方法，用于找出第一个符合条件的数组成员。它的参数是一个回调函数，所有数组成员依次执行该回调函数，直到找出第一个返回值为true的成员，
+		然后返回该成员。如果没有符合条件的成员，则返回undefined。
+			[1, 4, -5, 10].find((n) => n < 0)  // -5
+		数组实例的findIndex方法的用法与find方法非常类似，返回第一个符合条件的数组成员的位置，如果所有成员都不符合条件，则返回-1。
+			[1, 5, 10, 15].findIndex((n) => n > 9) // 2
+	5）、数组实例的fill()：使用给定值，填充一个数组
+		['a', 'b', 'c'].fill(7)    // [7, 7, 7]
+		new Array(3).fill(7)    // [7, 7, 7]
+		上面代码表明，fill方法用于空数组的初始化非常方便。数组中已有的元素，会被全部抹去。
+		fill方法还可以接受第二个和第三个参数，用于指定填充的起始位置和结束位置。
+		['a', 'b', 'c'].fill(7, 1, 2)   // ['a', 7, 'c']
+	6）、数组实例的entries()，keys()和values()
+		ES6提供三个新的方法——entries()，keys()和values()——用于遍历数组。它们都返回一个遍历器对象（详见《Iterator》一章），可以用for...of循环进行遍历，
+		唯一的区别是keys()是对键名的遍历、values()是对键值的遍历，entries()是对键值对的遍历。
+		for (let index of ['a', 'b'].keys()) {
+		  console.log(index);
+		  console.log(index);
+		}
+		// 0
+		// 1
+
+		for (let elem of ['a', 'b'].values()) {
+		  console.log(elem);
+		}
+		// 'a'
+		// 'b'
+
+		for (let [index, elem] of ['a', 'b'].entries()) {
+		  console.log(index, elem);
+		}
+		// 0 "a"
+		// 1 "b"
+	7）、数组实例的includes()	
+		Array.prototype.includes方法返回一个布尔值，表示某个数组是否包含给定的值，与字符串的includes方法类似。该方法属于ES7，但Babel转码器已经支持。
+		该方法的第二个参数表示搜索的起始位置，默认为0。如果第二个参数为负数，则表示倒数的位置，如果这时它大于数组长度（比如第二个参数为-4，但数组长度为3），
+		则会重置为从0开始。
+		例如：
+			[1, 2, 3].includes(2);     // true
+			[1, 2, 3].includes(4);     // false
+			[1, 2, NaN].includes(NaN); // true		
+		在之前都使用数组的indexOf()，但是该方法有两个缺点：一是不够语义化，它的含义是找到参数值的第一个出现位置，所以要去比较是否不等于-1，表达起来不够直观。
+		二是，它内部使用严格相当运算符（===）进行判断，这会导致对NaN的误判。
+	8）、数组的空位	：数组的空位指，数组的某一个位置没有任何值。比如，Array构造函数返回的数组都是空位。Array(3) // [, , ,]
+		数组的各个方法对待处理空位的方法上有差别
+
+8.函数的扩展
+	1）、函数参数的默认值。
+		es6允许为函数的参数设置默认值，即直接卸载参数定义的后面。
+		例如：
+			function log(x, y = 'World') {
+			  console.log(x, y);
+			}
+			log('Hello') // Hello World
+		参数变量是默认声明的，所以不能用let或const再次声明。使用参数默认值时，函数不能有同名参数。
+	2）、与解构复制默认值结合使用
+		function foo({x, y = 5}) {
+		  console.log(x, y);
+		}
+		foo({}) // undefined, 5
+		上面代码使用了对象的解构赋值默认值，而没有使用函数参数的默认值。只有当函数foo的参数是一个对象时，变量x和y才会通过解构赋值而生成。如果函数foo调用时参数不是对象，变量x和y就不会生成，从而报错。
+		如果参数对象没有y属性，y的默认值5才会生效。
+		function fetch(url, { method = 'GET' } = {}) {
+		  console.log(method);
+		}
+		fetch('http://example.com')
+		【该例子就是解构赋值和函数默认值结合使用的情况】
+		// 写法一
+		function m1({x = 0, y = 0} = {}) {//解构赋值和函数默认值结合使用
+		  return [x, y];
+		}
+
+		// 写法二
+		function m2({x, y} = { x: 0, y: 0 }) {//只设置了函数参数的默认值，没有设置解构的初始默认值
+		  return [x, y];
+		}
+	3）、参数默认值的位置
+		通常情况下，定义了默认值的参数，应该是函数的尾参数。因为这样比较容易看出来，到底省略了哪些参数。如果非尾部的参数设置默认值，实际上这个参数是没法省略的。
+		如果传入undefined，将触发该参数等于默认值，null则没有这个效果。
+		function foo(x = 5, y = 6) {
+		  console.log(x, y);
+		}
+		foo(undefined, null)
+		// 5 null
+	4）、函数的length属性	
+		指定了默认值以后，函数的length属性，将返回没有指定默认值的参数个数。也就是说，指定了默认值后，length属性将失真。
+		这是因为length属性的含义是，该函数预期传入的参数个数。某个参数指定默认值以后，预期传入的参数个数就不包括这个参数了。同理，rest参数也不会计入length属性。
+		如果设置了默认值的参数不是尾参数，那么length属性也不再计入后面的参数了。
+		例如：(function (a = 0, b, c) {}).length // 0     
+			(function (a, b = 1, c) {}).length // 1
+	5）、作用域
+		一旦设置了参数的默认值，函数进行声明初始化时，参数会形成一个单独的作用域（context）。等到初始化结束，这个作用域就会消失。这种语法行为，
+		在不设置参数默认值时，是不会出现的。
+	6）、rest参数
+		ES6 引入 rest 参数（形式为“...变量名”），用于获取函数的多余参数，这样就不需要使用arguments对象了。rest 参数搭配的变量是一个数组，该变量将多余的参数放入数组中。
+		function add(...values) {
+		  let sum = 0;
+		  for (var val of values) {
+			sum += val;
+		  }
+		  return sum;
+		}
+		add(2, 5, 3) // 10
+		【注意，rest 参数之后不能再有其他参数（即只能是最后一个参数），否则会报错。函数的length属性，不包括 rest 参数。】
+	7）、扩展运算符
+		扩展运算符（spread）是三个点（...）。它好比 rest 参数的逆运算，将一个数组转为用逗号分隔的参数序列。
+		例如：	
+			function add(x, y) {
+			  return x + y;
+			}
+
+			var numbers = [4, 38];
+			add(...numbers) // 42
+		应用场景：替代数组的apply方法。由于扩展运算符可以展开数组，所以不再需要apply方法，将数组转为函数的参数了。
+		例如：// ES5的写法
+			function f(x, y, z) {
+			  // ...
+			}
+			var args = [0, 1, 2];
+			f.apply(null, args);
+
+			// ES6的写法
+			function f(x, y, z) {
+			  // ...
+			}
+			var args = [0, 1, 2];
+			f(...args);
+		例子1：求数组中的最大元素
+			// ES5的写法
+			Math.max.apply(null, [14, 3, 77])
+
+			// ES6的写法
+			Math.max(...[14, 3, 77])
+
+			// 等同于
+			Math.max(14, 3, 77);
+		例子2：通过push函数，将一个数组添加到另一个数组的尾部。
+			// ES5的写法
+			var arr1 = [0, 1, 2];
+			var arr2 = [3, 4, 5];
+			Array.prototype.push.apply(arr1, arr2);
+
+			// ES6的写法
+			var arr1 = [0, 1, 2];
+			var arr2 = [3, 4, 5];
+			arr1.push(...arr2);
+	8）、严格模式
+		从es5开始，函数内部可以设定为严格模式
+		function doSomething(a, b) {
+		  'use strict';
+		  // code
+		}
+		ES2016 做了一点修改，规定只要函数参数使用了默认值、解构赋值、或者扩展运算符，那么函数内部就不能显式设定为严格模式，否则会报错。
+		两种方法可以规避这种限制。第一种是设定全局性的严格模式，这是合法的。
+		'use strict';
+		function doSomething(a, b = a) {
+		  // code
+		}
+		第二种是把函数包在一个无参数的立即执行函数里面。
+		const doSomething = (function () {
+		  'use strict';
+		  return function(value = 42) {
+			return value;
+		  };
+		}());
+	9）、name属性：函数的name属性，返回该函数的函数名
+		【需要注意的是，ES6 对这个属性的行为做出了一些修改。如果将一个匿名函数赋值给一个变量，ES5 的name属性，会返回空字符串，而 ES6 的name属性会返回实际的函数名。
+			如果将一个具名函数赋值给一个变量，则 ES5 和 ES6 的name属性都返回这个具名函数原本的名字。
+			Function构造函数返回的函数实例，name属性的值为anonymous。例如：(new Function).name // "anonymous"
+			bind返回的函数，name属性值会加上bound前缀。例如：foo.bind({}).name // "bound foo"】
+	10）、箭头函数
+		如果箭头函数不需要参数或需要多个参数，就使用一个圆括号代表参数部分。
+		如果箭头函数的代码块部分多于一条语句，就要使用大括号将它们括起来，并且使用return语句返回。由于大括号被解释为代码块，所以如果箭头函数直接返回一个对象，必须在对象外面加上括号。
+		注意点：
+		（1）函数体内的this对象，就是定义时所在的对象，而不是使用时所在的对象。
+
+		（2）不可以当作构造函数，也就是说，不可以使用new命令，否则会抛出一个错误。
+
+		（3）不可以使用arguments对象，该对象在函数体内不存在。如果要用，可以用Rest参数代替。
+
+		（4）不可以使用yield命令，因此箭头函数不能用作Generator函数。
+		this指向的固定化，并不是因为箭头函数内部有绑定this的机制，实际原因是箭头函数根本没有自己的this，导致内部的this就是外层代码块的this。
+		正是因为它没有this，所以也就不能用作构造函数。
+		
+		除了this，以下三个变量在箭头函数之中也是不存在的，指向外层函数的对应变量：arguments、super、new.target。
+		另外，由于箭头函数没有自己的this，所以当然也就不能用call()、apply()、bind()这些方法去改变this的指向。
+	11）、绑定this
+		箭头函数可以绑定this对象，大大减少了显式绑定this对象的写法（call、apply、bind）。但是，箭头函数并不适用于所有场合，
+		所以ES7提出了“函数绑定”（function bind）运算符，用来取代call、apply、bind调用。虽然该语法还是ES7的一个提案，但是Babel转码器已经支持。
+		函数绑定运算符是并排的两个双冒号（::），双冒号左边是一个对象，右边是一个函数。该运算符会自动将左边的对象，作为上下文环境（即this对象），绑定到右边的函数上面
+		例如：
+			foo::bar;
+			// 等同于
+			bar.bind(foo);
+
+			foo::bar(...arguments);
+			// 等同于
+			bar.apply(foo, arguments);
+		如果双冒号左边为空，右边是一个对象的方法，则等于将该方法绑定在该对象上面。
+		例如：
+			var method = obj::obj.foo;
+		// 等同于
+		var method = ::obj.foo;
+	12）、尾调用优化：就是指某个函数的最后一步是调用另一个函数。
+		以下三种都不是尾调用
+			// 情况一
+			function f(x){
+			  let y = g(x);
+			  return y;
+			}
+
+			// 情况二
+			function f(x){
+			  return g(x) + 1;
+			}
+
+			// 情况三
+			function f(x){
+			  g(x);
+			}
+		尾调用不一定出现在函数尾部，只要是最后一步操作即可。
+			function f(x) {
+			  if (x > 0) {
+				return m(x)
+			  }
+			  return n(x);
+			}
+		【函数调用会在内存形成一个“调用记录”，又称“调用帧”（call frame），保存调用位置和内部变量等信息。如果在函数A的内部调用函数B，
+		那么在A的调用帧上方，还会形成一个B的调用帧。等到B运行结束，将结果返回到A，B的调用帧才会消失。如果函数B内部还调用函数C，
+		那就还有一个C的调用帧，以此类推。所有的调用帧，就形成一个“调用栈”（call stack）。
+		尾调用由于是函数的最后一步操作，所以不需要保留外层函数的调用帧，因为调用位置、内部变量等信息都不会再用到了，只要直接用内层函数的调用帧，
+		取代外层函数的调用帧就可以了。】
+	13）、尾递归
+		函数调用自身，称为递归。如果尾调用自身，就称为尾递归。
+		【递归非常耗费内存，因为需要同时保存成千上百个调用帧，很容易发生“栈溢出”错误（stack overflow）。但对于尾递归来说，由于只存在一个调用帧，所以永远不会发生“栈溢出”错误。】
+		递归函数的改写。
+		尾递归的实现，往往需要改写递归函数，确保最后一步只调用自身。做到这一点的方法，就是把所有用到的内部变量改写成函数的参数。
+		函数式编程有一个概念，叫做柯里化（currying），意思是将多参数的函数转换成单参数的形式。
+			function factorial(n, total = 1) {
+			  if (n === 1) return total;
+			  return factorial(n - 1, n * total);
+			}
+
+			factorial(5) // 120 【使用es6的函数默认值的方法，可减少使用时传多个看起来没有用的参数的。】
+	14）、严格模式
+		ES6 的尾调用优化只在严格模式下开启，正常模式是无效的。
+		这是因为在正常模式下，函数内部有两个变量，可以跟踪函数的调用栈。
+			func.arguments：返回调用时函数的参数。
+			func.caller：返回调用当前函数的那个函数。
+		尾调用优化发生时，函数的调用栈会改写，因此上面两个变量就会失真。严格模式禁用这两个变量，所以尾调用模式仅在严格模式下生效。
+		
+		
+	
+10、Symbol
+	1）、概述
+	ES6 引入了一种新的原始数据类型Symbol，表示独一无二的值。它是 JavaScript 语言的第七种数据类型，前六种是：
+	undefined、null、布尔值（Boolean）、字符串（String）、数值（Number）、对象（Object）。
+	Symbol 值通过Symbol函数生成。这就是说，对象的属性名现在可以有两种类型，一种是原来就有的字符串，另一种就是新增的 Symbol 类型。凡是属性名属于 Symbol 类型，就都是独一无二的，可以保证不会与其他属性名产生冲突。	
+	【注意，Symbol函数前不能使用new命令，否则会报错。】	
+	Symbol函数可以接受一个字符串作为参数，表示对 Symbol 实例的描述，主要是为了在控制台显示，或者转为字符串时，比较容易区分。	
+	如果 Symbol 的参数是一个对象，就会调用该对象的toString方法，将其转为字符串，然后才生成一个 Symbol 值。
+	例如：
+		const obj = {
+			toString(){//es6函数的简写
+				return 'abc';
+			}
+		}
+		const sym = Symbol(obj);
+		sym //Symbol(abc)
+	【注意，Symbol函数的参数只是表示对当前 Symbol 值的描述，因此相同参数的Symbol函数的返回值是不相等的。】
+	Symbol值不能与其他类型的值进行运算，会报错，但是可以显示的转为字符串，也可以转换成布尔值，但是不能转为数值
+	例如：
+		var sym = Symbol('My symbol');
+		String(sym) // 'Symbol(My symbol)'
+		sym.toString() // 'Symbol(My symbol)'
+		
+		var sym = Symbol();
+		Boolean(sym) // true
+		!sym  // false
+		if (sym) {
+		  // ...
+		}
+		Number(sym) // TypeError
+		sym + 2 // TypeError
+	2）、作为属性名的Symbol
+	由于每一个 Symbol 值都是不相等的，这意味着 Symbol 值可以作为标识符，用于对象的属性名，就能保证不会出现同名的属性。这对于一个对象由多个模块构成的情况非常有
+	用，能防止某一个键被不小心改写或覆盖。
+	【注意，Symbol 值作为对象属性名时，不能用点运算符。因为点运算符后面总是字符串，所以不会读取mySymbol作为标识名所指代的那个值】
+	【在对象的内部，使用 Symbol 值定义属性时，Symbol 值必须放在方括号之中。】
+	Symbol 类型还可以用于定义一组常量，保证这组常量的值都是不相等的。
+	【还有一点需要注意，Symbol 值作为属性名时，该属性还是公开属性，不是私有属性。】
+	3）、实例：消除魔术字符串
+		魔术字符串指的是，在代码之中多次出现、与代码形成强耦合的某一个具体的字符串或者数值。风格良好的代码，应该尽量消除魔术字符串，改由含义清晰的变量代替。
+	4）、属性名的遍历
+		Symbol 作为属性名，该属性不会出现在for...in、for...of循环中，也不会被Object.keys()、Object.getOwnPropertyNames()、JSON.stringify()返回。但是，
+		它也不是私有属性，有一个Object.getOwnPropertySymbols方法，可以获取指定对象的所有 Symbol 属性名。
+		Object.getOwnPropertySymbols方法返回一个数组，成员是当前对象的所有用作属性名的 Symbol 值。
+		另一个新的API，Reflect.ownKeys方法可以返回所有类型的键名，包括常规键名和 Symbol 键名。
+		【由于以 Symbol 值作为名称的属性，不会被常规方法遍历得到。我们可以利用这个特性，为对象定义一些非私有的、但又希望只用于内部的方法。】
+	5）、Symbol.for(),Symbol.keyFor()
+		有时，我们希望重新使用同一个Symbol值，Symbol.for方法可以做到这一点。它接受一个字符串作为参数，然后搜索有没有以该参数作为名称的Symbol值。
+		如果有，就返回这个Symbol值，否则就新建并返回一个以该字符串为名称的Symbol值。
+		例如：
+			var s1 = Symbol.for('foo');
+			var s2 = Symbol.for('foo');
+			s1 === s2 // true
+	
+	Symbol.keyFor方法返回一个已登记的 Symbol 类型值的key。
+	var s1 = Symbol.for("foo");
+	Symbol.keyFor(s1) // "foo"
+
+	var s2 = Symbol("foo");
+	Symbol.keyFor(s2) // undefined	
+	【变量s2属于未登记的Symbol值，所以返回undefined。】
+	【需要注意的是，Symbol.for为Symbol值登记的名字，是全局环境的，可以在不同的 iframe 或 service worker 中取到同一个值。】
+	6）、实例：模块的Singleton模式
+	Singleton模式指的是调用一个类，任何时候返回的都是同一个实例。
+	7）、内置的Symbol值
+	除了定义自己使用的Symbol值以外，ES6还提供了11个内置的Symbol值，指向语言内部使用的方法。
+
+11、Set和Map数据结构
+	1）、基本用法
+		ES6 提供了新的数据结构 Set。它类似于数组，但是成员的值都是唯一的，没有重复的值。
+		Set 本身是一个构造函数，用来生成 Set 数据结构。
+		例如：
+		const s = new Set();
+		[2, 3, 5, 4, 5, 2, 2].forEach(x => s.add(x));
+		for (let i of s) {
+		  console.log(i);
+		}
+		// 2 3 5 4
+		【Set 函数可以接受一个数组（或类似数组的对象）作为参数，用来初始化。】
+		set函数可用于数组去重
+		[...new Set(array)]
+		【向Set加入值的时候，不会发生类型转换，所以5和"5"是两个不同的值。Set内部判断两个值是否不同，使用的算法叫做“Same-value equality”，
+		它类似于精确相等运算符（===），主要的区别是NaN等于自身，而精确相等运算符认为NaN不等于自身。
+		另外，两个对象总是不相等的。】
+	2）、Set实例的属性和方法	
+	Set 结构的实例有以下属性。
+		Set.prototype.constructor：构造函数，默认就是Set函数。
+		Set.prototype.size：返回Set实例的成员总数。	
+	Set 实例的方法分为两大类：操作方法（用于操作数据）和遍历方法（用于遍历成员）。下面先介绍四个操作方法。
+		add(value)：添加某个值，返回Set结构本身。
+		delete(value)：删除某个值，返回一个布尔值，表示删除是否成功。
+		has(value)：返回一个布尔值，表示该值是否为Set的成员。
+		clear()：清除所有成员，没有返回值。	
+	Array.from方法可以将 Set 结构转为数组。	
+		const items = new Set([1, 2, 3, 4, 5]);
+		const array = Array.from(items);
+	数组去重的另一种方法：
+		function dedupe(array) {
+		  return Array.from(new Set(array));
+		}
+		dedupe([1, 1, 2, 3]) // [1, 2, 3]
+	Set 结构的实例有四个遍历方法，可以用于遍历成员。
+		keys()：返回键名的遍历器
+		values()：返回键值的遍历器
+		entries()：返回键值对的遍历器
+		forEach()：使用回调函数遍历每个成员	
+	【需要特别指出的是，Set的遍历顺序就是插入顺序。这个特性有时非常有用，比如使用Set保存一个回调函数列表，调用时就能保证按照添加顺序调用。】	
+	a.keys(),values(),entries()	
+		由于 Set 结构没有键名，只有键值（或者说键名和键值是同一个值），所以keys方法和values方法的行为完全一致。
+		Set 结构的实例默认可遍历，它的默认遍历器生成函数就是它的values方法。这意味着，可以省略values方法，直接用for...of循环遍历 Set。
+	b.forEach()
+		Set结构的实例的forEach方法，用于对每个成员执行某种操作，没有返回值。	
+	c.遍历的应用
+		数组去重：
+		let arr = [3, 5, 2, 2, 5, 5];
+		let unique = [...new Set(arr)];
+		// [3, 5, 2]	
+		使用Set实现并集，交集和差集
+			let a = new Set([1, 2, 3]);
+			let b = new Set([4, 3, 2]);
+			// 并集
+			let union = new Set([...a, ...b]);
+			// Set {1, 2, 3, 4}
+			// 交集
+			let intersect = new Set([...a].filter(x => b.has(x)));
+			// set {2, 3}
+			// 差集
+			let difference = new Set([...a].filter(x => !b.has(x)));
+			let difference = new Set([...a].filter(x => !b.has(x)));
+			// Set {1}
+	3）、WeakSet	
+		WeakSet 结构与 Set 类似，也是不重复的值的集合。但是，它与 Set 有两个区别。首先，WeakSet 的成员只能是对象，而不能是其他类型的值。
+		其次，WeakSet 中的对象都是弱引用，即垃圾回收机制不考虑 WeakSet 对该对象的引用，也就是说，如果其他对象都不再引用该对象，
+		那么垃圾回收机制会自动回收该对象所占用的内存，不考虑该对象还存在于 WeakSet 之中。
+		【由于上面这个特点，WeakSet 的成员是不适合引用的，因为它会随时消失。另外，由于 WeakSet 内部有多少个成员，取决于垃圾回收机制有没有运行，
+		运行前后很可能成员个数是不一样的，而垃圾回收机制何时运行是不可预测的，因此 ES6 规定 WeakSet 不可遍历。】
+		【WeakSet 的一个用处，是储存 DOM 节点，而不用担心这些节点从文档移除时，会引发内存泄漏。】
+	4）、Map
+		ES6 提供了 Map 数据结构。它类似于对象，也是键值对的集合，但是“键”的范围不限于字符串，各种类型的值（包括对象）都可以当作键。也就是说，
+		Object 结构提供了“字符串—值”的对应，Map结构提供了“值—值”的对应，是一种更完善的 Hash 结构实现。如果你需要“键值对”的数据结构，Map 比 Object 更合适。
+		例如：
+			const m = new Map();
+			const o = {p: 'Hello World'};
+
+			m.set(o, 'content')
+			m.get(o) // "content"
+
+			m.has(o) // true
+			m.delete(o) // true
+			m.has(o) // false
+		Map 也可以接受一个数组作为参数。该数组的成员是一个个表示键值对的数组。
+		例如：
+			const map = new Map([
+			  ['name', '张三'],
+			  ['title', 'Author']
+			]);
+
+			map.size // 2
+			map.has('name') // true
+			map.get('name') // "张三"
+			map.has('title') // true
+			map.get('title') // "Author"
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
