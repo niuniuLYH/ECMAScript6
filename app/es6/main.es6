@@ -20,6 +20,12 @@ for(let item of greet.colors){
     console.log('省略values方法直接遍历Set：'+ item);
 }
 
+/**proxy**/
+{
+    let proxyApply = greet.proxyApply(1,2);
+    '_prop' in greet.proxyHas;
+}
+
 /**map数据结构**/
 console.log('map数据结构size：' + greet.map.size);
 
