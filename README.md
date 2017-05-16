@@ -1,11 +1,10 @@
-#A seed project for developing ES6 program
+# 这个是ECMAScript6的一个学习例子
 
-Run the following commands to set up your local ES6 env:
+运行下面的命令设置本地的ES6环境
 
-    npm install
     gulp build --dev
     gulp server
 
-Now the server is listening at port 8000, and your modifications will be detected automatically.
+现在服务器正在侦听8000端口，您的修改将被自动检测到。
 
-Try to change some code, and enjoy your ES6 learning.
+现在就可以修改其中的代码，开始做es6的小例子
