@@ -114,6 +114,16 @@ try {
 
 console.log('map数据结构size：' + _hello.greet.map.size);
 
+/**Proxy **/
+{
+    console.log('proxy结构' + _hello.greet.proxy(1, 2));
+    console.log('proxy结构：' + new _hello.greet.proxy(1, 2));
+    var arr = _hello.greet.createArray('a', 'b', 'c');
+    console.log('使用proxy结构，拦截数组读取负数的情况' + arr[-1]);
+    _hello.greet.proxySet.age = 100;
+    console.log('s使用proxy判断对象设置的age值是否合法：' + _hello.greet.proxySet.age);
+}
+
 /**数组扩展**/
 {
     var arrayLike = {
@@ -127,8 +137,8 @@ console.log('map数据结构size：' + _hello.greet.map.size);
     //    var arr1 = [].slice.call(arrayLike); // ['a', 'b', 'c']
 
     // ES6的写法
-    var arr = Array.from(arrayLike); // ['a', 'b', 'c']
-    console.log('数组的扩展：' + arr);
+    var _arr = Array.from(arrayLike); // ['a', 'b', 'c']
+    console.log('数组的扩展：' + _arr);
 
     /**扩展运算符的应用**/
     //合并数组
@@ -240,6 +250,60 @@ function Greet() {
     this.hello = 'hello world!';
     this.colors = new Set(['red', 'green', 'blue']);
     this.map = new Map([['name', '����'], ['title', 'author']]);
+    this.proxyHandle = {
+        get: function get(target, name) {
+            //���ض������ԵĶ�ȡ������proxy.foo��proxy['foo']��
+            if (name === 'prototype') {
+                return Object.prototype;
+            }
+            return 'hello' + name;
+        },
+
+        apply: function apply(target, thisBinding, args) {
+            //���� Proxy ʵ����Ϊ�������õĲ���������proxy(...args)��proxy.call(object, ...args)��proxy.apply(...)��
+            return args[0];
+        },
+
+        construct: function construct(target, args) {
+            //���� Proxy ʵ����Ϊ���캯�����õĲ���������new proxy(...args)��
+            return { value: args[1] };
+        }
+    };
+    this.proxy = new Proxy(function (x, y) {
+        return x + y;
+    }, this.proxyHandle);
+    this.createArray = function () {
+        //ʹ��get���أ�ʵ��������ȡ������������
+        var handler = {
+            get: function get(target, propkey, receiver) {
+                var index = Number(propkey);
+                if (index < 0) {
+                    propkey = String(target.length + index);
+                }
+                return Reflect.get(target, propkey, receiver);
+            }
+        };
+        var target = [];
+        target.push.apply(target, arguments);
+        return new Proxy(target, handler);
+    };
+    this.validator = { //�÷������ж����ö�����ageֵ�Ƿ�����Ҫ�󣬲����Ͼ��׳�����
+        set: function set(obj, prop, value) {
+            //set������������ĳ�����Եĸ�ֵ������
+            if (prop === 'age') {
+                if (!Number.isInteger(value)) {
+                    //�ж����õ�age���Ե�ֵ�Ƿ���һ������
+                    throw new TypeError('the age is not an integer');
+                }
+                if (value > 200) {
+                    //�ж����õ�age���Ե�ֵ�Ƿ���һ��С��200������
+                    throw new RangeError('the age seems invalid');
+                }
+            }
+            obj[prop] = value; //age���������ԣ�ֱ�ӱ���
+        }
+    };
+    this.proxySet = new Proxy({}, this.validator);
 }
 if (!global[FOO_KEY]) {
     global[FOO_KEY] = new Greet();
