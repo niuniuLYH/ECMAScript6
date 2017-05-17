@@ -113,6 +113,16 @@ try {
 
 console.log('map数据结构size：' + _hello.greet.map.size);
 
+/**Proxy **/
+{
+    console.log('proxy结构' + _hello.greet.proxy(1, 2));
+    console.log('proxy结构：' + new _hello.greet.proxy(1, 2));
+    var arr = _hello.greet.createArray('a', 'b', 'c');
+    console.log('使用proxy结构，拦截数组读取负数的情况' + arr[-1]);
+    _hello.greet.proxySet.age = 100;
+    console.log('s使用proxy判断对象设置的age值是否合法：' + _hello.greet.proxySet.age);
+}
+
 /**数组扩展**/
 {
     var arrayLike = {
@@ -126,8 +136,8 @@ console.log('map数据结构size：' + _hello.greet.map.size);
     //    var arr1 = [].slice.call(arrayLike); // ['a', 'b', 'c']
 
     // ES6的写法
-    var arr = Array.from(arrayLike); // ['a', 'b', 'c']
-    console.log('数组的扩展：' + arr);
+    var _arr = Array.from(arrayLike); // ['a', 'b', 'c']
+    console.log('数组的扩展：' + _arr);
 
     /**扩展运算符的应用**/
     //合并数组

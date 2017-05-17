@@ -40,7 +40,7 @@ gulp.task('build', gulpsync.sync(['compile-es6', 'pack-js', 'compress-bundle']),
 gulp.task('server', function() {
   connect.server({
     root: 'app',
-    port: 8000,
+    port: 8080,
     livereload: true
   });
 });

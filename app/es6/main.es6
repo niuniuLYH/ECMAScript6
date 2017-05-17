@@ -23,6 +23,16 @@ for(let item of greet.colors){
 /**map数据结构**/
 console.log('map数据结构size：' + greet.map.size);
 
+/**Proxy **/
+{
+    console.log('proxy结构' + greet.proxy(1,2));
+    console.log('proxy结构：' + new greet.proxy(1,2));
+    let arr = greet.createArray('a','b','c');
+    console.log('使用proxy结构，拦截数组读取负数的情况' + arr[-1]);
+    greet.proxySet.age = 100;
+    console.log('s使用proxy判断对象设置的age值是否合法：' + greet.proxySet.age);
+}
+
 /**数组扩展**/
 {
     let arrayLike = {
